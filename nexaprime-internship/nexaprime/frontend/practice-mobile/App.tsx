@@ -7,6 +7,8 @@ import {
   Text,
   TextInput,
   View,
+  TouchableOpacity,
+  Image,
 } from 'react-native';
 
 // Your Mac's IP. No "/" at the end.
@@ -75,15 +77,25 @@ export default function App() {
         autoCorrect={false}
       />
 
-      <Button
-        title="Greet me"
+      <TouchableOpacity
         onPress={loadGreeting}
         disabled={loading}
-      />
+        onPressIn={() => setError('')}
+        style={{
+          backgroundColor: loading ? '#999' : '#007AFF',
+          paddingVertical: 12,
+          paddingHorizontal: 24,
+          borderRadius: 8,
+        }}
+      >
+        <Text>Greet me</Text>
+      </TouchableOpacity>
+
 
       <View style={styles.resultArea}>{result}</View>
 
       <StatusBar style="auto" />
+
     </View>
   );
 }
