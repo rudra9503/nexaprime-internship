@@ -10,7 +10,10 @@ export class AppService {
     return 'Goodbye World!';
   }
 
-  gethello(name: string): string {
+  async gethello(name: string): Promise<string> {
+    setTimeout(() => {
+      console.log(`Hello ${name}!`);
+    }, 1000);
     return `Hello ${name}!`;
   }
 }

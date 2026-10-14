@@ -15,8 +15,8 @@ export class AppController {
     return this.appService.getGoodbye();
   }
 
-  @Get('/hello/:name')
-  gethello(@Param('name') name: string): string {
+  @Get ('/hello/:name')
+ async gethello(@Param('name') name: string): Promise<string> {
     return this.appService.gethello(name);
   }
 }
