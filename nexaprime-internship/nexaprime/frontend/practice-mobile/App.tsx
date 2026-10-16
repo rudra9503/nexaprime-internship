@@ -7,95 +7,84 @@ import {
   Text,
   TextInput,
   View,
-  TouchableOpacity,
-  Image,
 } from 'react-native';
 
-// Your Mac's IP. No "/" at the end.
-const BASE_URL = 'http://192.168.1.10:3000';
+const BASE_URL = 'http://192.168.1.6:3000'; 
 
 export default function App() {
-  const [name, setName] = useState('');       // what the user typed
-  const [message, setMessage] = useState(''); // greeting from the server
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [errors, setErrors] = useState<string[]>([]);
 
-  // Runs when the button is pressed (not on startup anymore).
-  const loadGreeting = async () => {
-    const trimmedName = name.trim();
-
-    // Validate on the client before bothering the server.
-    if (!trimmedName) {
-      setMessage('');
-      setError('Please enter a name.');
-      return;
-    }
-
+  const createUser = async () => {
     setLoading(true);
-    setError('');
-    setMessage('');
+    setSuccess('');
+    setErrors([]);
 
     try {
-      const response = await fetch(
-        `${BASE_URL}/hello/${encodeURIComponent(trimmedName)}`,
-      );
+      const response = await fetch(`${BASE_URL}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email }),
+      });
+
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(`Server responded with status ${response.status}`);
+        // Validation errors: message is an array. Other errors: a string.
+        const messages = Array.isArray(data.message)
+          ? data.message
+          : [data.message ?? `Server responded with status ${response.status}`];
+        setErrors(messages);
+        return;
       }
 
-      const text = await response.text();
-      setMessage(text);
+      setSuccess(`Created user #${data.id}: ${data.name} (${data.email})`);
+      setName('');
+      setEmail('');
     } catch (e) {
-      const reason = e instanceof Error ? e.message : 'Unknown error';
-      setError(`Could not load the greeting. ${reason}`);
+      setErrors(['Could not reach the server. Check your Wi-Fi and BASE_URL.']);
     } finally {
       setLoading(false);
     }
   };
 
-  // Result area: spinner, error, or greeting.
-  let result = null;
-  if (loading) {
-    result = <ActivityIndicator size="large" />;
-  } else if (error) {
-    result = <Text style={styles.error}>{error}</Text>;
-  } else if (message) {
-    result = <Text style={styles.message}>{message}</Text>;
-  }
-
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Enter your name</Text>
+      <Text style={styles.title}>Create user</Text>
 
       <TextInput
         style={styles.input}
         value={name}
         onChangeText={setName}
-        placeholder="e.g. Rudraksh"
-        autoCapitalize="words"
+        placeholder="Name"
+        autoCorrect={false}
+      />
+      <TextInput
+        style={styles.input}
+        value={email}
+        onChangeText={setEmail}
+        placeholder="Email"
+        autoCapitalize="none"
+        keyboardType="email-address"
         autoCorrect={false}
       />
 
-      <TouchableOpacity
-        onPress={loadGreeting}
-        disabled={loading}
-        onPressIn={() => setError('')}
-        style={{
-          backgroundColor: loading ? '#999' : '#007AFF',
-          paddingVertical: 12,
-          paddingHorizontal: 24,
-          borderRadius: 8,
-        }}
-      >
-        <Text>Greet me</Text>
-      </TouchableOpacity>
+      <Button title="Create" onPress={createUser} disabled={loading} />
 
-
-      <View style={styles.resultArea}>{result}</View>
+      <View style={styles.resultArea}>
+        {loading && <ActivityIndicator size="large" />}
+        {errors.map((msg, i) => (
+          <Text key={i} style={styles.error}>
+            {msg}
+          </Text>
+        ))}
+        {success !== '' && <Text style={styles.success}>{success}</Text>}
+      </View>
 
       <StatusBar style="auto" />
-
     </View>
   );
 }
@@ -104,16 +93,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'lightblue',
-    alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
   },
-  label: {
-    fontSize: 18,
-    marginBottom: 8,
-  },
+  title: { fontSize: 22, marginBottom: 12, textAlign: 'center' },
   input: {
-    width: '100%',
     backgroundColor: 'white',
     borderWidth: 1,
     borderColor: '#999',
@@ -122,17 +106,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 12,
   },
-  resultArea: {
-    marginTop: 24,
-    minHeight: 40,
-    alignItems: 'center',
-  },
-  message: {
-    fontSize: 24,
-  },
-  error: {
-    fontSize: 16,
-    color: 'red',
-    textAlign: 'center',
-  },
+  resultArea: { marginTop: 24, minHeight: 60, alignItems: 'center' },
+  error: { color: 'red', textAlign: 'center', marginBottom: 4 },
+  success: { color: 'green', fontSize: 16, textAlign: 'center' },
 });
